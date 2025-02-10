@@ -44,9 +44,9 @@ function getFormattedPrompt(resume, jobDescription) {
        - DO NOT include the bullet symbols. Only Include the text.
 
 2. **Formatting Rules:**  
-   - Each line in the output must be **115 characters or fewer**.
+   - Each bullet point must be 115 characters or lesser including whitespaces.
+   - Dont make the points too short. Utilize the character limit freely.
    - Use strong, action-oriented language that emphasizes measurable impact.
-   - Each point should not be too short. Use the character limit freely.
 
 3. **Output Format:**  
    - The final output must be a JSON object with two keys:
@@ -86,7 +86,7 @@ ${jobDescription}
   return prompt;
 }
 
-// Function to extract JSON from the response and clean the JSON
+// Function to extract and clean JSON
 function extractJSON(text) {
   // Regular expression to extract JSON content from text
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -111,21 +111,42 @@ function extractJSON(text) {
 
   // Function to clean up the technical skills
   function cleanTechnicalSkills(skill) {
-    labelsToRemove.forEach((label) => {
-      skill.old = skill.old
-        .replace(new RegExp(`\\b${label}:?\\b`, "gi"), "")
-        .trim();
-      skill.new = skill.new
-        .replace(new RegExp(`\\b${label}:?\\b`, "gi"), "")
-        .trim();
-    });
+    // Remove category labels
+    skill.old = skill.old
+      .replace(new RegExp(`\\b(${labelsToRemove.join("|")}):?\\b`, "gi"), "")
+      .trim();
+    skill.new = skill.new
+      .replace(new RegExp(`\\b(${labelsToRemove.join("|")}):?\\b`, "gi"), "")
+      .trim();
+
+    // Remove leading colons, tabs, and extra spaces
+    skill.old = skill.old.replace(/^[:\s\t]+/, "").trim();
+    skill.new = skill.new.replace(/^[:\s\t]+/, "").trim();
+
     return skill;
   }
 
-  // Modify technical_skills to remove labels and trim spaces
+  // Function to clean up bullets (remove bullet symbols & trim spaces/tabs)
+  function cleanBullets(bullet) {
+    bullet.old = bullet.old.replace(/^[-*•]\s*/, "").trim(); // Remove leading bullet symbols
+    bullet.new = bullet.new.replace(/^[-*•]\s*/, "").trim(); // Remove leading bullet symbols
+
+    // Remove leading colons, tabs, and extra spaces
+    bullet.old = bullet.old.replace(/^[:\s\t]+/, "").trim();
+    bullet.new = bullet.new.replace(/^[:\s\t]+/, "").trim();
+
+    return bullet;
+  }
+
+  // Remove labels and clean technical skills
   if (jsonData.technical_skills) {
     jsonData.technical_skills =
       jsonData.technical_skills.map(cleanTechnicalSkills);
+  }
+
+  // Clean up bullets
+  if (jsonData.bullets) {
+    jsonData.bullets = jsonData.bullets.map(cleanBullets);
   }
 
   return jsonData;
@@ -136,8 +157,10 @@ async function getAIResumeSuggestions(formattedPrompt) {
   return axios.post(
     "https://openrouter.ai/api/v1/chat/completions",
     {
-      //   model: "deepseek/deepseek-r1-distill-llama-70b:free", // Great Response. Slightly unreliable
-      model: "google/gemini-2.0-flash-thinking-exp:free", // Okaish Response. Very Reliable
+      //model: "deepseek/deepseek-r1-distill-llama-70b:free", // Great Response. Slightly unreliable
+      //model: "google/gemini-2.0-flash-thinking-exp:free", // Okaish Response. Very Reliable
+      model: "deepseek/deepseek-r1",
+      //model: "openai/o1-preview",
       messages: [
         {
           role: "user",

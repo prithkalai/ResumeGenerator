@@ -27,4 +27,44 @@ async function getGoogleDriveClient() {
   return google.drive({ version: "v3", auth: authClient });
 }
 
-module.exports = { getGoogleDocsClient, getGoogleDriveClient };
+function generateBatchUpdateRequests(jsonData) {
+  const requests = [];
+
+  // Process Technical Skills replacements
+  if (jsonData.technical_skills) {
+    jsonData.technical_skills.forEach((skill) => {
+      requests.push({
+        replaceAllText: {
+          containsText: {
+            text: skill.old, // Old text to find
+            matchCase: true,
+          },
+          replaceText: skill.new, // New text to replace with
+        },
+      });
+    });
+  }
+
+  // Process Bullets replacements
+  if (jsonData.bullets) {
+    jsonData.bullets.forEach((bullet) => {
+      requests.push({
+        replaceAllText: {
+          containsText: {
+            text: bullet.old, // Old text to find
+            matchCase: true,
+          },
+          replaceText: bullet.new, // New text to replace with
+        },
+      });
+    });
+  }
+
+  return requests;
+}
+
+module.exports = {
+  getGoogleDocsClient,
+  getGoogleDriveClient,
+  generateBatchUpdateRequests,
+};

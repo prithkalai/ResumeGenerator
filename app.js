@@ -1,6 +1,11 @@
 const express = require("express");
 const morgan = require("morgan");
-const { getGoogleDocsClient } = require("./google/auth");
+require("dotenv").config();
+const {
+  getGoogleDocsClient,
+  getGoogleDriveClient,
+  generateBatchUpdateRequests,
+} = require("./google/auth");
 const {
   getAIResumeSuggestions,
   getFormattedPrompt,
@@ -12,15 +17,39 @@ const app = express();
 app.use(express.json());
 app.use(morgan("tiny"));
 
-app.get("/api/v1/resume/update", async (req, res) => {
+const BASE_RESUME_FILE_ID = process.env.BASE_RESUME_FILE_ID;
+const SPECIFIED_FOLDER = process.env.SPECIFIED_FOLDER;
+
+app.post("/api/v1/resume/update", async (req, res) => {
   try {
+    const suggestions = req.body;
+
+    const drive = await getGoogleDriveClient();
     const docs = await getGoogleDocsClient();
 
-    const response = await docs.documents.get({
-      documentId: "10EdDgAr_7adBhpwPQtcDL-Xyah8XyIGsbvUXY5eq2i4",
+    // Create a Copy of Base Resume
+    const newFile = await drive.files.copy({
+      fileId: BASE_RESUME_FILE_ID,
+      requestBody: {
+        name: "Copied_Updated_Resume_API_Generated",
+      },
     });
 
-    return res.json(response.data);
+    // Move new Resume to specified folder
+    drive.files.update({
+      fileId: newFile.data.id,
+      addParents: [SPECIFIED_FOLDER],
+    });
+
+    // Use replaceAllText() to remove all the text and send it as a batchUpdate
+    docs.documents.batchUpdate({
+      documentId: newFile.data.id,
+      requestBody: {
+        requests: generateBatchUpdateRequests(suggestions),
+      },
+    });
+
+    return res.send("Done");
   } catch (error) {
     console.error("❌ API Error:", error.response?.data || error.message);
     res.status(500).json({ error: "Failed to update resume" });
