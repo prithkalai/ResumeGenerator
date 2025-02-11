@@ -44,8 +44,8 @@ function getFormattedPrompt(resume, jobDescription) {
        - DO NOT include the bullet symbols. Only Include the text.
 
 2. **Formatting Rules:**  
-   - Each bullet point must be 115 characters or lesser including whitespaces.
-   - Dont make the points too short. Utilize the character limit freely.
+   - Each bullet point must be around 130 characters including whitespaces or lesser.
+   - Dont make the points too long but utilize the character space.
    - Use strong, action-oriented language that emphasizes measurable impact.
 
 3. **Output Format:**  
@@ -158,8 +158,8 @@ async function getAIResumeSuggestions(formattedPrompt) {
     "https://openrouter.ai/api/v1/chat/completions",
     {
       //model: "deepseek/deepseek-r1-distill-llama-70b:free", // Great Response. Slightly unreliable
-      //model: "google/gemini-2.0-flash-thinking-exp:free", // Okaish Response. Very Reliable
-      model: "deepseek/deepseek-r1",
+      model: "google/gemini-2.0-flash-thinking-exp:free", // Okaish Response. Very Reliable
+      //model: "deepseek/deepseek-r1",
       //model: "openai/o1-preview",
       messages: [
         {

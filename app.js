@@ -1,5 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
+const cors = require("cors");
 require("dotenv").config();
 const {
   getGoogleDocsClient,
@@ -16,6 +17,7 @@ const app = express();
 
 app.use(express.json());
 app.use(morgan("tiny"));
+app.use(cors());
 
 const BASE_RESUME_FILE_ID = process.env.BASE_RESUME_FILE_ID;
 const SPECIFIED_FOLDER = process.env.SPECIFIED_FOLDER;
@@ -31,7 +33,10 @@ app.post("/api/v1/resume/update", async (req, res) => {
     const newFile = await drive.files.copy({
       fileId: BASE_RESUME_FILE_ID,
       requestBody: {
-        name: "Copied_Updated_Resume_API_Generated",
+        name:
+          suggestions.fileName.length == 0
+            ? "AI_Generated_Resume"
+            : suggestions.fileName,
       },
     });
 
